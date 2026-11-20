@@ -1,71 +1,75 @@
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Only POST requests allowed"
-    });
+    return res.status(405).json({ error: "Only POST requests allowed" });
   }
 
   try {
+    const { message, history = [], imageBase64, mimeType, language = "Auto" } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({
-        error: "Gemini API key not configured"
-      });
+      return res.status(500).json({ error: "GEMINI_API_KEY not found in Vercel" });
     }
 
-    const { message, previousInteractionId } = req.body || {};
-
-    if (!message) {
-      return res.status(400).json({
-        error: "Message is required"
-      });
+    if (!message && !imageBase64) {
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
-    const payload = {
-      model: "gemini-3.8-flash",
-      input: message
-    };
-
-    if (previousInteractionId) {
-      payload.previous_interaction_id = previousInteractionId;
-    }
-
-    const response = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/interactions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey
+    const parts = [];
+    if (imageBase64 && mimeType) {
+      parts.push({
+        inlineData: {
+          data: imageBase64,
+          mimeType,
         },
-        body: JSON.stringify(payload)
-      }
-    );
+      });
+    }
+    if (message) {
+      parts.push({ text: message });
+    }
+
+    const contents = [
+      ...history,
+      {
+        role: "user",
+        parts,
+      },
+    ];
+
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [
+            {
+              text: `You are NANDAN AI. Reply clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}). Use Google Search when latest info is needed.`,
+            },
+          ],
+        },
+        contents,
+        tools: [{ google_search: {} }],
+      }),
+    });
 
     const data = await response.json();
 
     if (!response.ok) {
       return res.status(response.status).json({
-        error: data.error?.message || "Gemini API error"
+        error: data?.error?.message || "Gemini API error",
       });
     }
 
-    const reply = (data.steps || [])
-      .filter(step => step.type === "model_output")
-      .flatMap(step => step.content || [])
-      .filter(item => item.type === "text")
-      .map(item => item.text)
-      .join("\n");
+    const reply =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join("\n") || "Koi jawab nahi mila.";
 
-    return res.status(200).json({
-      reply,
-      interactionId: data.id
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      error: "Server error. Please try again."
-    });
+    return res.status(200).json({ reply });
+  } catch (err) {
+    return res.status(500).json({ error: "Server error: " + err.message });
   }
-};
+}
