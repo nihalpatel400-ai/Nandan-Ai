@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#071426">
+<title>NANDAN AI — Your Smart Assistant</title>
+<style>
+:root{--bg:#071426;--panel:#0d1e34;--panel2:#102641;--line:rgba(151,190,230,.16);--text:#edf6ff;--muted:#9bb0c8;--blue:#38bdf8;--cyan:#67e8f9}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 75% 0%,#123b62 0,transparent 38%),var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial;min-height:100vh}
+.app{display:flex;min-height:100vh}.sidebar{width:270px;background:rgba(5,17,32,.82);border-right:1px solid var(--line);padding:22px 16px;display:flex;flex-direction:column;gap:20px}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 7px}.logo{width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#38bdf8,#2563eb);display:grid;place-items:center;font-weight:900;color:#061426;font-size:22px;box-shadow:0 8px 28px #0ea5e955}.brand strong{display:block;letter-spacing:1.5px;font-size:16px}.brand small{color:var(--muted);font-size:11px}
+.newchat{border:1px solid #2b85b9;background:linear-gradient(120deg,#0e7490,#1d4ed8);color:white;border-radius:12px;padding:13px 14px;text-align:left;font-size:14px;font-weight:650;cursor:pointer}
+.side-label{color:#6f8aa8;text-transform:uppercase;font-size:10px;letter-spacing:1.5px;padding:0 8px}.history{color:var(--muted);font-size:13px;padding:10px 9px;border-radius:9px}.history.active,.history:hover{background:#102640;color:var(--text)}
+.side-bottom{margin-top:auto;border-top:1px solid var(--line);padding:15px 8px;color:var(--muted);font-size:12px;line-height:1.6}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}.topbar{height:70px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 30px;background:#07142688;backdrop-filter:blur(12px)}.model{font-size:13px;color:#d7eaff}.badge{font-size:11px;border:1px solid #1d7895;color:var(--cyan);border-radius:30px;padding:6px 10px}
+.content{width:min(900px,100%);margin:0 auto;padding:36px 24px 24px;display:flex;flex-direction:column;flex:1}.welcome{text-align:center;margin:auto auto 30px}.orb{width:76px;height:76px;margin:0 auto 20px;border-radius:25px;background:linear-gradient(145deg,#67e8f9,#2563eb 70%);display:grid;place-items:center;color:#061426;font-size:34px;font-weight:900;box-shadow:0 0 55px #0ea5e944}.welcome h1{font-size:clamp(27px,5vw,42px);margin:0 0 10px;letter-spacing:-1px}.gradient{background:linear-gradient(90deg,#67e8f9,#60a5fa);background-clip:text;color:transparent}.welcome p{color:var(--muted);margin:0;font-size:14px}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:min(650px,100%);margin:0 auto 26px}.suggestion{background:linear-gradient(145deg,#102640,#0b1c31);border:1px solid var(--line);border-radius:14px;padding:15px;text-align:left;color:#d8e9fa;cursor:pointer;font-size:13px;transition:.2s}.suggestion:hover{border-color:#38bdf8;transform:translateY(-2px)}.suggestion span{display:block;color:var(--muted);font-size:11px;margin-top:5px}
+.messages{display:flex;flex-direction:column;gap:18px;padding-bottom:22px}.message{display:flex;gap:11px;align-items:flex-start;max-width:100%}.avatar{width:32px;height:32px;flex:0 0 32px;border-radius:11px;background:#12375a;display:grid;place-items:center;color:var(--cyan);font-weight:800;font-size:12px}.message.user{flex-direction:row-reverse}.message.user .avatar{background:#1d4ed8;color:white}.bubble{max-width:min(720px,calc(100% - 45px));background:#10243b;border:1px solid var(--line);border-radius:4px 15px 15px 15px;padding:12px 15px;line-height:1.65;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}.message.user .bubble{background:#123d67;border-color:#2563eb66;border-radius:15px 4px 15px 15px}
+.composer-wrap{margin-top:auto;padding-top:12px}.composer{display:flex;align-items:flex-end;gap:10px;background:#0d2037;border:1px solid #2b5277;border-radius:18px;padding:10px;box-shadow:0 12px 40px #0003}.composer textarea{flex:1;resize:none;min-height:27px;max-height:130px;border:0;outline:0;background:transparent;color:var(--text);font:14px/1.5 inherit;padding:7px 5px}.composer textarea::placeholder{color:#7892ad}.send{width:42px;height:42px;border:0;border-radius:13px;background:linear-gradient(135deg,#38bdf8,#2563eb);color:#061426;font-size:20px;font-weight:800;cursor:pointer}.send:disabled{opacity:.45;cursor:not-allowed}.hint{text-align:center;color:#7189a4;font-size:10px;margin:10px 0 0}.demo-note{text-align:center;color:#8ca5bf;font-size:11px;margin-top:12px}.mobile-menu{display:none}
+@media(max-width:700px){.sidebar{display:none}.topbar{height:60px;padding:0 17px}.content{padding:25px 15px 18px}.suggestions{grid-template-columns:1fr}.welcome{margin-top:45px}.mobile-menu{display:block;color:var(--muted);font-size:12px}.badge{font-size:10px}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand"><div class="logo">N</div><div><strong>NANDAN AI</strong><small>Your smart assistant</small></div></div>
+  <button class="newchat" id="newChat">＋ &nbsp; New chat</button>
+  <div class="side-label">Workspace</div>
+  <div class="history active">✦ &nbsp; New conversation</div>
+  <div class="side-bottom">Made to help you think, learn and create.<br><span style="color:#5f7895">NANDAN AI • Preview version</span></div>
+</aside>
+<main class="main">
+  <header class="topbar"><div><span class="mobile-menu">NANDAN AI &nbsp; • &nbsp;</span><span class="model">✧ &nbsp; Nandan Assistant</span></div><span class="badge">● &nbsp; ONLINE PREVIEW</span></header>
+  <section class="content">
+    <div class="welcome" id="welcome">
+      <div class="orb">N</div>
+      <h1>How can I help <span class="gradient">you today?</span></h1>
+      <p>Ask anything. Learn something new. Make an idea happen.</p>
+    </div>
+    <div class="messages" id="messages" aria-live="polite"></div>
+    <div class="suggestions" id="suggestions">
+      <button class="suggestion" data-prompt="Explain artificial intelligence in simple Hindi.">✧ &nbsp; Explain AI simply<span>Understand a complex topic</span></button>
+      <button class="suggestion" data-prompt="Give me a beginner-friendly plan to learn Python.">⌘ &nbsp; Learn Python<span>Build skills step by step</span></button>
+      <button class="suggestion" data-prompt="Suggest some small business ideas in Gujarat.">↗ &nbsp; Explore business ideas<span>Turn an idea into a plan</span></button>
+      <button class="suggestion" data-prompt="Help me write a professional resume summary.">▤ &nbsp; Write something<span>Resume, email or application</span></button>
+    </div>
+    <div class="composer-wrap">
+      <div class="composer"><textarea id="prompt" rows="1" placeholder="Message Nandan AI..."></textarea><button class="send" id="send" aria-label="Send">↑</button></div>
+      <div class="hint">Enter to send • Shift + Enter for a new line</div>
+      <div class="demo-note">Preview mode: connect an AI service to enable real AI answers.</div>
+    </div>
+  </section>
+</main>
+</div>
+<script>
+const promptBox=document.getElementById('prompt'), sendBtn=document.getElementById('send'), messages=document.getElementById('messages'), welcome=document.getElementById('welcome'), suggestions=document.getElementById('suggestions');
+function addMessage(text,who){const row=document.createElement('div');row.className='message '+who;const avatar=document.createElement('div');avatar.className='avatar';avatar.textContent=who==='user'?'YOU':'N';const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=text;row.append(avatar,bubble);messages.append(row);row.scrollIntoView({behavior:'smooth',block:'nearest'});}
+function demoReply(text){const t=text.toLowerCase();if(t.includes('python'))return 'Python seekhne ke liye pehle variables, data types, if-else, loops, lists aur functions samjho. Roz thodi practice karo. Uske baad files, errors aur chhote projects par kaam karo.';if(t.includes('business'))return 'Gujarat mein business idea choose karte waqt location, customer demand, investment aur monthly expenses check karo. Pehle chhote level par demand test karna achha rahega.';if(t.includes('resume'))return 'Resume summary mein apni education, relevant skills aur job interest ko 2–3 lines mein likho. Example: “BCA graduate with basic knowledge of Python and Excel, eager to contribute to an office or operations role and learn new skills.”';if(t.includes('artificial intelligence')||t.includes(' ai'))return 'Artificial Intelligence (AI) aisi technology hai jo computers ko language samajhne, patterns pehchanne aur useful answers dene jaise kaam karne mein madad karti hai.';return 'Thanks for trying Nandan AI! Yeh abhi website ka preview mode hai, isliye jawab demo hain. Real AI answers ke liye secure backend ke through AI API connect karni hogi.';}
+function send(){const text=promptBox.value.trim();if(!text)return;welcome.style.display='none';suggestions.style.display='none';addMessage(text,'user');promptBox.value='';promptBox.style.height='auto';sendBtn.disabled=true;setTimeout(()=>{addMessage(demoReply(text),'assistant');sendBtn.disabled=false;promptBox.focus();},450);}
+sendBtn.addEventListener('click',send);promptBox.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});promptBox.addEventListener('input',()=>{promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,130)+'px';});document.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>{promptBox.value=b.dataset.prompt;send();}));document.getElementById('newChat').addEventListener('click',()=>{messages.innerHTML='';welcome.style.display='block';suggestions.style.display='grid';promptBox.value='';});
+</script>
+</body>
+</html>
