@@ -54,11 +54,69 @@
 </main>
 </div>
 <script>
-const promptBox=document.getElementById('prompt'), sendBtn=document.getElementById('send'), messages=document.getElementById('messages'), welcome=document.getElementById('welcome'), suggestions=document.getElementById('suggestions');
-function addMessage(text,who){const row=document.createElement('div');row.className='message '+who;const avatar=document.createElement('div');avatar.className='avatar';avatar.textContent=who==='user'?'YOU':'N';const bubble=document.createElement('div');bubble.className='bubble';bubble.textContent=text;row.append(avatar,bubble);messages.append(row);row.scrollIntoView({behavior:'smooth',block:'nearest'});}
-function demoReply(text){const t=text.toLowerCase();if(t.includes('python'))return 'Python seekhne ke liye pehle variables, data types, if-else, loops, lists aur functions samjho. Roz thodi practice karo. Uske baad files, errors aur chhote projects par kaam karo.';if(t.includes('business'))return 'Gujarat mein business idea choose karte waqt location, customer demand, investment aur monthly expenses check karo. Pehle chhote level par demand test karna achha rahega.';if(t.includes('resume'))return 'Resume summary mein apni education, relevant skills aur job interest ko 2–3 lines mein likho. Example: “BCA graduate with basic knowledge of Python and Excel, eager to contribute to an office or operations role and learn new skills.”';if(t.includes('artificial intelligence')||t.includes(' ai'))return 'Artificial Intelligence (AI) aisi technology hai jo computers ko language samajhne, patterns pehchanne aur useful answers dene jaise kaam karne mein madad karti hai.';return 'Thanks for trying Nandan AI! Yeh abhi website ka preview mode hai, isliye jawab demo hain. Real AI answers ke liye secure backend ke through AI API connect karni hogi.';}
-function send(){const text=promptBox.value.trim();if(!text)return;welcome.style.display='none';suggestions.style.display='none';addMessage(text,'user');promptBox.value='';promptBox.style.height='auto';sendBtn.disabled=true;setTimeout(()=>{addMessage(demoReply(text),'assistant');sendBtn.disabled=false;promptBox.focus();},450);}
-sendBtn.addEventListener('click',send);promptBox.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}});promptBox.addEventListener('input',()=>{promptBox.style.height='auto';promptBox.style.height=Math.min(promptBox.scrollHeight,130)+'px';});document.querySelectorAll('.suggestion').forEach(b=>b.addEventListener('click',()=>{promptBox.value=b.dataset.prompt;send();}));document.getElementById('newChat').addEventListener('click',()=>{messages.innerHTML='';welcome.style.display='block';suggestions.style.display='grid';promptBox.value='';});
+const promptBox = document.getElementById("prompt");
+const sendBtn = document.getElementById("send");
+const messages = document.getElementById("messages");
+
+function addMessage(text, role) {
+    const div = document.createElement("div");
+    div.className = "message " + role;
+    div.textContent = text;
+    messages.appendChild(div);
+    messages.scrollTop = messages.scrollHeight;
+    return div;
+}
+
+async function sendMessage() {
+    const message = promptBox.value.trim();
+
+    if (!message) return;
+
+    addMessage(message, "user");
+    promptBox.value = "";
+    sendBtn.disabled = true;
+
+    const loading = addMessage("NANDAN AI is thinking...", "ai");
+
+    try {
+        const response = await fetch("/api/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "AI connection failed");
+        }
+
+        loading.textContent = data.reply || "No response received.";
+
+    } catch (error) {
+        loading.textContent = "Error: " + error.message;
+    }
+
+    sendBtn.disabled = false;
+}
+
+sendBtn.addEventListener("click", sendMessage);
+
+promptBox.addEventListener("keydown", function(event) {
+    if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        sendMessage();
+    }
+});
+
+document.querySelectorAll(".suggestion").forEach(button => {
+    button.addEventListener("click", () => {
+        promptBox.value = button.dataset.prompt;
+        sendMessage();
+    });
+});
 </script>
 </body>
 </html>
