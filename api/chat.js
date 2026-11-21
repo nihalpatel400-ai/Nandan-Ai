@@ -37,51 +37,43 @@ export default async function handler(req, res) {
       },
     ];
 
-    const models = ["gemini-3.8-flash"];
-    let lastError = "Gemini API error";
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
 
-    for (const model of models) {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
-
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      signal: AbortSignal.timeout(20000),
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [
+            {
+              text: `You are NANDAN AI. Reply clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
+            },
+          ],
         },
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [
-              {
-                text: `You are NANDAN AI. Reply clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
-              },
-            ],
-          },
-          contents,
-        }),
+        contents,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return res.status(response.status).json({
+        error: data?.error?.message || `Gemini API error (${response.status})`,
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        const reply =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p) => p.text)
-            .filter(Boolean)
-            .join("\n") || "Koi jawab nahi mila.";
-
-        return res.status(200).json({ reply });
-      }
-
-      lastError = data?.error?.message || `HTTP ${response.status}`;
-
-      if (response.status !== 503 && response.status !== 429) {
-        return res.status(response.status).json({ error: lastError });
-      }
     }
 
-    return res.status(503).json({ error: lastError });
+    const reply =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join("\n") || "Koi jawab nahi mila.";
+
+    return res.status(200).json({ reply });
   } catch (err) {
-    return res.status(500).json({ error: err.message || "Server error" });
+    return res.status(500).json({ error: err?.message || "Server error" });
   }
 }
