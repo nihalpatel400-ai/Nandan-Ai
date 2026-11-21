@@ -1,150 +1,88 @@
 export default async function handler(req, res) {
-
   if (req.method !== "POST") {
-    return res.status(405).json({
-      error: "Only POST requests are allowed"
-    });
+    return res.status(405).json({ error: "Only POST requests allowed" });
   }
 
   try {
-
-    // API KEY
+    const { message, history = [], imageBase64, mimeType, language = "Auto" } = req.body || {};
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({
-        error: "GEMINI_API_KEY not found in Vercel"
-      });
+      return res.status(500).json({ error: "GEMINI_API_KEY not found in Vercel" });
     }
-
-    // USER INPUT
-    const {
-      message,
-      history = [],
-      imageBase64,
-      mimeType,
-      language = "Auto"
-    } = req.body || {};
 
     if (!message && !imageBase64) {
-      return res.status(400).json({
-        error: "Message or image is required"
-      });
+      return res.status(400).json({ error: "Message or image is required" });
     }
 
-    // IMAGE SUPPORT
     const parts = [];
-
     if (imageBase64 && mimeType) {
       parts.push({
-        inline_data: {
-          mime_type: mimeType,
-          data: imageBase64
-        }
+        inlineData: {
+          data: imageBase64,
+          mimeType,
+        },
       });
     }
-
     if (message) {
-      parts.push({
-        text: message
-      });
+      parts.push({ text: message });
     }
 
-    // CHAT HISTORY
-    const safeHistory = Array.isArray(history)
-      ? history.slice(-10).filter(item =>
-          item &&
-          ["user", "model"].includes(item.role) &&
-          Array.isArray(item.parts)
-        )
-      : [];
-
+    const recentHistory = Array.isArray(history) ? history.slice(-8) : [];
     const contents = [
-      ...safeHistory,
+      ...recentHistory,
       {
         role: "user",
-        parts: parts
-      }
+        parts,
+      },
     ];
 
-    // GEMINI API
-    const url =
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+    const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    let lastError = "Gemini API error";
 
-    const response = await fetch(url, {
+    for (const model of models) {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-      method: "POST",
-
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey.trim()
-      },
-
-      body: JSON.stringify({
-
-        system_instruction: {
-          parts: [
-            {
-              text:
-                `You are NANDAN AI, a helpful smart assistant.
-                Reply clearly and naturally.
-                Support Hindi, Gujarati and English.
-                Preferred language: ${language}.
-                Explain difficult topics simply.
-                Give accurate and useful answers.
-                Be friendly and professional.`
-            }
-          ]
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": apiKey,
         },
-
-        contents: contents,
-
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2048
-        }
-
-      })
-
-    });
-
-    // API RESPONSE
-    const data = await response.json();
-
-    if (!response.ok) {
-
-      return res.status(response.status).json({
-        error:
-          data.error?.message || "Gemini API request failed"
+        body: JSON.stringify({
+          system_instruction: {
+            parts: [
+              {
+                text: `You are NANDAN AI. Reply clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
+              },
+            ],
+          },
+          contents,
+        }),
       });
 
+      const data = await response.json();
+
+      if (response.ok) {
+        const reply =
+          data?.candidates?.[0]?.content?.parts
+            ?.map((p) => p.text)
+            .filter(Boolean)
+            .join("\n") || "Koi jawab nahi mila.";
+
+        return res.status(200).json({ reply });
+      }
+
+      lastError = data?.error?.message || `HTTP ${response.status}`;
+
+      // Agar overload / high demand (503/429) nahi hai toh aage retry mat karo
+      if (response.status !== 503 && response.status !== 429) {
+        return res.status(response.status).json({ error: lastError });
+      }
     }
 
-    // EXTRACT ANSWER
-    const reply = data.candidates?.[0]?.content?.parts
-      ?.map(part => part.text || "")
-      .filter(Boolean)
-      .join("\n");
-
-    if (!reply) {
-      return res.status(502).json({
-        error: "No response received from Gemini AI"
-      });
-    }
-
-    // SUCCESS
-    return res.status(200).json({
-      reply: reply
-    });
-
-  } catch (error) {
-
-    console.error("NANDAN AI ERROR:", error);
-
-    return res.status(500).json({
-      error: "Server error: " + error.message
-    });
-
+    return res.status(503).json({ error: lastError });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || "Server error" });
   }
-
 }
