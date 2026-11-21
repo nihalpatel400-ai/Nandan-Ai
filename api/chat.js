@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       parts.push({ text: message });
     }
 
-    const recentHistory = Array.isArray(history) ? history.slice(-8) : [];
+    const recentHistory = Array.isArray(history) ? history.slice(-6) : [];
     const contents = [
       ...recentHistory,
       {
@@ -37,7 +37,8 @@ export default async function handler(req, res) {
       },
     ];
 
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
+    const url =
+      "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
 
     const response = await fetch(url, {
       method: "POST",
@@ -45,12 +46,12 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
-      signal: AbortSignal.timeout(20000),
+      signal: AbortSignal.timeout(35000),
       body: JSON.stringify({
         system_instruction: {
           parts: [
             {
-              text: `You are NANDAN AI. Reply clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
+              text: `You are NANDAN AI. Reply briefly and clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
             },
           ],
         },
