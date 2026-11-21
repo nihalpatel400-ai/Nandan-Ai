@@ -37,7 +37,7 @@ export default async function handler(req, res) {
       },
     ];
 
-    const models = ["gemini-2.5-flash", "gemini-2.5-flash-lite"];
+    const models = ["gemini-3.8-flash"];
     let lastError = "Gemini API error";
 
     for (const model of models) {
@@ -75,7 +75,6 @@ export default async function handler(req, res) {
 
       lastError = data?.error?.message || `HTTP ${response.status}`;
 
-      // Agar overload / high demand (503/429) nahi hai toh aage retry mat karo
       if (response.status !== 503 && response.status !== 429) {
         return res.status(response.status).json({ error: lastError });
       }
