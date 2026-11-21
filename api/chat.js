@@ -8,11 +8,11 @@ export default async function handler(req, res) {
     const apiKey = process.env.GEMINI_API_KEY;
 
     if (!apiKey) {
-      return res.status(500).json({ error: "GEMINI_API_KEY not found in Vercel" });
+      return res.status(500).json({ error: "API key is not configured for NANDAN AI." });
     }
 
     if (!message && !imageBase64) {
-      return res.status(400).json({ error: "Message or image is required" });
+      return res.status(400).json({ error: "Please enter a message or image." });
     }
 
     const parts = [];
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       parts.push({ text: message });
     }
 
-    const recentHistory = Array.isArray(history) ? history.slice(-4) : [];
+    const recentHistory = Array.isArray(history) ? history.slice(-2) : [];
     const contents = [
       ...recentHistory,
       {
@@ -46,14 +46,18 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
-      signal: AbortSignal.timeout(9000),
+      signal: AbortSignal.timeout(18000),
       body: JSON.stringify({
         system_instruction: {
           parts: [
             {
-              text: `You are NANDAN AI. Give a short, direct reply in Hindi, Gujarati, or English (preferred: ${language}).`,
+              text: `You are NANDAN AI. Reply quickly, naturally, and concisely in Hindi, Gujarati, or English (preferred: ${language}).`,
             },
           ],
+        },
+        generationConfig: {
+          maxOutputTokens: 350,
+          temperature: 0.7,
         },
         contents,
       }),
@@ -62,24 +66,30 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.error?.message || `Gemini API error (${response.status})`,
-      });
+      const cleanMsg = (data?.error?.message || `Request failed (${response.status})`).replace(
+        /gemini/gi,
+        "NANDAN AI"
+      );
+      return res.status(response.status).json({ error: cleanMsg });
     }
 
     const reply =
       data?.candidates?.[0]?.content?.parts
         ?.map((p) => p.text)
         .filter(Boolean)
-        .join("\n") || "Koi jawab nahi mila.";
+        .join("\n") || "NANDAN AI could not generate a reply.";
 
     return res.status(200).json({ reply });
   } catch (err) {
     if (err?.name === "TimeoutError" || err?.name === "AbortError") {
       return res.status(504).json({
-        error: "Gemini response taking too long. Try a shorter prompt.",
+        error: "NANDAN AI took too long to respond. Please try again.",
       });
     }
-    return res.status(500).json({ error: err?.message || "Server error" });
+    const cleanErr = (err?.message || "Something went wrong in NANDAN AI.").replace(
+      /gemini/gi,
+      "NANDAN AI"
+    );
+    return res.status(500).json({ error: cleanErr });
   }
 }
