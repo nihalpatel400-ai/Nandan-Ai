@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       parts.push({ text: message });
     }
 
-    const recentHistory = Array.isArray(history) ? history.slice(-6) : [];
+    const recentHistory = Array.isArray(history) ? history.slice(-4) : [];
     const contents = [
       ...recentHistory,
       {
@@ -46,12 +46,12 @@ export default async function handler(req, res) {
         "Content-Type": "application/json",
         "x-goog-api-key": apiKey,
       },
-      signal: AbortSignal.timeout(35000),
+      signal: AbortSignal.timeout(9000),
       body: JSON.stringify({
         system_instruction: {
           parts: [
             {
-              text: `You are NANDAN AI. Reply briefly and clearly in Hindi, Gujarati, or English as suitable (preferred: ${language}).`,
+              text: `You are NANDAN AI. Give a short, direct reply in Hindi, Gujarati, or English (preferred: ${language}).`,
             },
           ],
         },
@@ -75,6 +75,11 @@ export default async function handler(req, res) {
 
     return res.status(200).json({ reply });
   } catch (err) {
+    if (err?.name === "TimeoutError" || err?.name === "AbortError") {
+      return res.status(504).json({
+        error: "Gemini response taking too long. Try a shorter prompt.",
+      });
+    }
     return res.status(500).json({ error: err?.message || "Server error" });
   }
 }
