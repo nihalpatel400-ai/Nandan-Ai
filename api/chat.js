@@ -1,5 +1,3 @@
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Only POST requests allowed in NANDAN AI." });
@@ -42,66 +40,49 @@ export default async function handler(req, res) {
     const url =
       "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent";
 
-    const maxAttempts = 3;
-    let lastStatus = 503;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-goog-api-key": apiKey,
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey,
+      },
+      signal: AbortSignal.timeout(15000),
+      body: JSON.stringify({
+        system_instruction: {
+          parts: [
+            {
+              text: `You are NANDAN AI. Never mention Gemini or any underlying model. Reply quickly, clearly, and naturally in Hindi, Gujarati, or English (preferred: ${language}).`,
+            },
+          ],
         },
-        signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({
-          system_instruction: {
-            parts: [
-              {
-                text: `You are NANDAN AI. Never mention Gemini or any underlying model. Reply quickly, clearly, and naturally in Hindi, Gujarati, or English (preferred: ${language}).`,
-              },
-            ],
-          },
-          generationConfig: {
-            maxOutputTokens: 350,
-            temperature: 0.7,
-          },
-          contents,
-        }),
-      });
+        generationConfig: {
+          maxOutputTokens: 300,
+          temperature: 0.7,
+        },
+        contents,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        const reply =
-          data?.candidates?.[0]?.content?.parts
-            ?.map((p) => p.text)
-            .filter(Boolean)
-            .join("\n") || "NANDAN AI could not generate a reply.";
-
-        return res.status(200).json({ reply });
-      }
-
-      lastStatus = response.status;
-
-      if ((response.status === 503 || response.status === 429) && attempt < maxAttempts) {
-        await sleep(500);
-        continue;
-      }
-
+    if (!response.ok) {
       if (response.status === 503 || response.status === 429) {
         return res.status(503).json({
           error: "NANDAN AI is experiencing high traffic right now. Please try again in a moment.",
         });
       }
-
       return res.status(response.status).json({
         error: "NANDAN AI could not complete your request. Please try again.",
       });
     }
 
-    return res.status(lastStatus).json({
-      error: "NANDAN AI is experiencing high traffic right now. Please try again in a moment.",
-    });
+    const reply =
+      data?.candidates?.[0]?.content?.parts
+        ?.map((p) => p.text)
+        .filter(Boolean)
+        .join("\n") || "NANDAN AI could not generate a reply.";
+
+    return res.status(200).json({ reply });
   } catch (err) {
     if (err?.name === "TimeoutError" || err?.name === "AbortError") {
       return res.status(504).json({
