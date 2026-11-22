@@ -84,7 +84,7 @@ Preferred language: ${language}.`
         "x-goog-api-key": apiKey
       },
       body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(55000)
     });
 
     const data = await response.json();
